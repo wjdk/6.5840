@@ -5,7 +5,7 @@
 #
 
 # un-comment this to run the tests with the Go race detector.
-# RACE=-race
+RACE=-race
 
 if [[ "$OSTYPE" = "darwin"* ]]
 then
@@ -48,7 +48,7 @@ if [ "$TIMEOUT" != "" ]
 then
   TIMEOUT2=$TIMEOUT
   TIMEOUT2+=" -k 2s 120s "
-  TIMEOUT+=" -k 2s 45s "
+  TIMEOUT+=" -k 2s 120s "
 fi
 
 # run the test in a fresh sub-directory.

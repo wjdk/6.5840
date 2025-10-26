@@ -1,36 +1,62 @@
 package mr
 
+import "os"
+import "strconv"
 //
 // RPC definitions.
 //
-// remember to capitalize all names.
-//
 
-import "os"
-import "strconv"
+type JobType int
 
-//
-// example to show how to declare the arguments
-// and reply for an RPC.
-//
+const (
+    MapJob JobType = iota
+    ReduceJob
+    WaitJob
+    CompleteJob
+)
 
-type ExampleArgs struct {
-	X int
+type TaskStatus int
+
+const (
+    Idle TaskStatus = iota
+    InProgress
+    Completed
+)
+
+type SchedulePhase int
+
+const (
+    MapPhase SchedulePhase = iota
+    ReducePhase
+    CompletePhase
+)
+
+// Heartbeat RPC
+type HeartbeatRequest struct {
+    // 空请求，worker只需要说"我准备好了"
 }
 
-type ExampleReply struct {
-	Y int
+type HeartbeatResponse struct {
+    JobType  JobType
+    FileName string
+    Id       int
+    NReduce  int
+    NMap     int
 }
 
-// Add your RPC definitions here.
+// Report RPC  
+type ReportRequest struct {
+    Id     int
+    Status TaskStatus
+}
 
+type ReportResponse struct {
+    Accepted bool
+}
 
 // Cook up a unique-ish UNIX-domain socket name
-// in /var/tmp, for the coordinator.
-// Can't use the current directory since
-// Athena AFS doesn't support UNIX-domain sockets.
 func coordinatorSock() string {
-	s := "/var/tmp/5840-mr-"
-	s += strconv.Itoa(os.Getuid())
-	return s
+    s := "/var/tmp/5840-mr-"
+    s += strconv.Itoa(os.Getuid())
+    return s
 }
