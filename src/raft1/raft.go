@@ -114,6 +114,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
 	// Your code here (3A).
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	return rf.currentTerm, rf.state == Leader
 }
 
@@ -299,31 +301,30 @@ func (rf *Raft) startElection(){
 	rf.votedFor = rf.me 
 	cnt := 1 //vote for self
 	rf.lastHeartbeatTime = time.Now() //reset election timer
+	me := rf.me
+	args := &RequestVoteArgs{
+		Term: rf.currentTerm,
+		CandidateId: rf.me,
+		LastLogIndex: len(rf.log)-1,
+		LastLogTerm: rf.log[len(rf.log)-1].Term,
+	}
 	rf.mu.Unlock()
 	for id,server := range(rf.peers) {
-		if id == rf.me {
+		if id == me {
 			continue
 		}
 		go func(server *labrpc.ClientEnd){
-			rf.mu.Lock()
-			args := &RequestVoteArgs{
-				Term: rf.currentTerm,
-				CandidateId: rf.me,
-				LastLogIndex: len(rf.log)-1,
-				LastLogTerm: rf.log[len(rf.log)-1].Term,
-			}
 			reply := &RequestVoteReply{}
-			rf.mu.Unlock()
 			ok := server.Call("Raft.RequestVote", args, reply)
 			if !ok {
 				return
 			}
 			rf.mu.Lock()
 			defer rf.mu.Unlock()
-			// rf.updateTerm(reply.Term)
-			// if rf.state == Follower {
-			// 	return 
-			// }
+			rf.updateTerm(reply.Term)
+			if rf.state == Follower {
+				return 
+			}
 			if reply.VoteGranted {
 				cnt += 1
 				if cnt >= (len(rf.peers)+1)/2 {
@@ -380,7 +381,8 @@ func (rf *Raft) ticker() {
 		case Follower,Candidate:
 			if time.Now().Sub(lastHeartbeatTime) > electionTimeout {
 				// fmt.Printf("%d start election: term %d \n",rf.me,rf.currentTerm+1)
-				rf.startElection()
+				go rf.startElection()
+				//we may need to start an new election when running an election
 			}
 		case Leader:
 			
