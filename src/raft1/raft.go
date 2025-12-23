@@ -299,7 +299,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 // if it's ever committed. the second return value is the current
 // term. the third return value is true if this server believes it is
 // the leader.
-func (rf *Raft) Start(command interface{}) (int, int, bool) {
+func (rf *Raft) Start(command interface{}) (int, int, bool) {//raft集群执行相应命令并写入日志
 	// Your code here (3B).
 	rf.mu.Lock()
 	index := len(rf.log)
@@ -336,7 +336,7 @@ func (rf *Raft) killed() bool {
 	return z == 1
 }
 
-func (rf *Raft) startElection(){
+func (rf *Raft) startElection(){//rf发起选举
 	rf.mu.Lock()
 	//DebugPrintf("%d start election: term %d, %v\n",rf.me,rf.currentTerm,time.Now().Sub(rf.lastHeartbeatTime))
 	rf.state = Candidate
@@ -379,7 +379,7 @@ func (rf *Raft) startElection(){
 	}
 	return 
 }
-func (rf *Raft) appendChecker() {
+func (rf *Raft) appendChecker() {//leader试图向follower同步日志，每隔一段时间检查一次
 	for rf.killed() == false {
 		for id,_ := range(rf.peers) {
 			if id == rf.me {
@@ -438,7 +438,7 @@ func (rf *Raft) appendChecker() {
 		time.Sleep(time.Duration(205) * time.Millisecond)
 	}
 }
-func (rf *Raft) commitChecker() {
+func (rf *Raft) commitChecker() {//leader试图提交某个日志（需要半数成功执行），每隔一段时间检查一次
 	for rf.killed() == false {
 		rf.mu.Lock()
 		if rf.state != Leader {
