@@ -415,10 +415,7 @@ func (rf *Raft) appendChecker() {
 				ok := rf.peers[serverId].Call("Raft.AppendEntries", &args, &reply)
 				rf.mu.Lock()
 				if !ok {
-					DebugPrintf("%d to %d append entry failed!\n",rf.me,id)
-					if rf.nextIndex[serverId] > 1 {
-						rf.nextIndex[serverId] -= 1
-					}
+					DebugPrintf("%d to %d append network failed!\n",rf.me,id)
 					rf.mu.Unlock()
 					return 
 				}
@@ -502,7 +499,7 @@ func (rf *Raft) leaderTicker() {//给follower发送心跳信息
 		time.Sleep(time.Duration(205) * time.Millisecond)
 	}
 }
-func (rf *Raft) ticker() {
+func (rf *Raft) ticker() {//election checker
 	for rf.killed() == false {
 		// Your code here (3A)
 		// Check if a leader election should be started.
